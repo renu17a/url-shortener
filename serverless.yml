@@ -1,0 +1,55 @@
+# For full config options, check the docs:
+#    docs.serverless.com
+service: serverless-template 
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-stack-output
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${opt:stage, 'dev'}
+  region: eu-west-1
+  environment:
+    DB_PATH: "mongodb+srv://<user>:<password>@<db_host>/test?retryWrites=true&w=majority"
+
+
+custom:
+  stage: ${opt:stage, 'dev'}
+  output:
+    file: .serverless/output.json
+
+resources:
+  Outputs:
+    ApiUrl:
+      Description: "The API Gateway URL"
+      Value:
+        Fn::Join:
+          - ""
+          - - "https://"
+            - Ref: ApiGatewayRestApi
+            - ".execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}"
+
+functions:
+  createHash:
+    handler: src/functions/urlhashing.createHash
+    description: Create URL Hash
+    events:
+      - http:
+          path: hash
+          method: post
+  getURLByHash:
+    handler: src/functions/urlhashing.getURLByHash
+    description: Get URL by hash
+    events:
+      - http:
+          path: url
+          method: get
+  getStatsByURL:
+    handler: src/functions/urlhashing.getStatsByURL
+    description: Get Stats by URL
+    events:
+      - http:
+          path: stats/url
+          method: post
